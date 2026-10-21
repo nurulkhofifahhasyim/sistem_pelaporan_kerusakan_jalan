@@ -6,7 +6,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     ports:
-      - "${APP_PORT:-8080}:80"
+      - "${APP_PORT:-8181}:80"
     environment:
       DB_HOST: db
       DB_NAME: db_pelaporan_jalan
@@ -29,7 +29,7 @@ services:
       TZ: Asia/Jakarta
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ports:
-      - "${DB_PORT:-3307}:3306"
+      - "${DB_PORT:-3316}:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
