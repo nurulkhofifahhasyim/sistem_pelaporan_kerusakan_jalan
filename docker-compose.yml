@@ -8,10 +8,18 @@ services:
     ports:
       - "${APP_PORT:-8181}:80"
     environment:
+      APP_BASE_URL: ""
       DB_HOST: db
       DB_NAME: db_pelaporan_jalan
       DB_USER: laporjalan
       DB_PASSWORD: ${DB_PASSWORD:-laporjalan}
+      # Menu Monitor Logging membaca log dari Elasticsearch host
+      ELASTICSEARCH_HOST: ${ELASTICSEARCH_HOST:-https://host.docker.internal:9200}
+      ELASTICSEARCH_USER: ${ELASTICSEARCH_USER:-elastic}
+      ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASSWORD:-}
+      KIBANA_URL: ${KIBANA_URL:-http://localhost:5601}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # Live-edit the code; logs/ and uploads/ end up in the project folder
       - .:/var/www/app
@@ -55,6 +63,7 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./docker/logstash/pipeline.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./docker/logstash/app-logs-template.json:/usr/share/logstash/templates/app-logs-template.json:ro
       - ./logs:/app-logs:ro
       - logstash_data:/usr/share/logstash/data
     depends_on:

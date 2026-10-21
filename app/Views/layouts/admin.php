@@ -91,6 +91,12 @@
       <i data-lucide="terminal" class="w-4 h-4 flex-shrink-0"></i>
       Query Recommend
     </a>
+    <?php if (($_SESSION['admin_jabatan'] ?? '') === 'Superadmin'): ?>
+    <a href="<?= $base ?>/admin/monitor-log" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-300 <?= str_contains($uri,'monitor-log')?'active':'' ?>">
+      <i data-lucide="monitor-dot" class="w-4 h-4 flex-shrink-0"></i>
+      Monitor Logging
+    </a>
+    <?php endif; ?>
   </nav>
 
   <div class="px-4 py-4 border-t border-white/10">

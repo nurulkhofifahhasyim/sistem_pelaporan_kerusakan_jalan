@@ -20,6 +20,44 @@ error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
+use App\Core\Logger;
+
+header('X-Request-Id: ' . Logger::requestId());
+
+// PHP warning/notice → log WARNING (tetap diteruskan ke handler bawaan PHP)
+set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): bool {
+    if (!(error_reporting() & $errno) || in_array($errno, [E_DEPRECATED, E_USER_DEPRECATED], true)) {
+        return false;
+    }
+    Logger::warning('PHP Warning: ' . $errstr, ['errno' => $errno, 'file' => $errfile, 'line' => $errline]);
+    return false;
+});
+
+// Exception yang tidak tertangkap → log ERROR + halaman 500 dengan kode referensi
+set_exception_handler(function (\Throwable $e): void {
+    Logger::exception($e);
+    while (ob_get_level() > 0) ob_end_clean();
+    if (!headers_sent()) http_response_code(500);
+    echo '<!DOCTYPE html><html lang="id"><meta charset="UTF-8"><title>Terjadi Kesalahan</title>'
+        . '<body style="font-family:sans-serif;text-align:center;padding:60px;color:#334155">'
+        . '<h1>Terjadi kesalahan pada sistem</h1><p>Silakan coba lagi nanti.</p>'
+        . '<p style="color:#94a3b8;font-size:13px">Kode referensi: ' . Logger::requestId() . '</p></body></html>';
+});
+
+register_shutdown_function(function (): void {
+    $fatal = error_get_last();
+    if ($fatal && in_array($fatal['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (!headers_sent()) http_response_code(500);
+        Logger::error('PHP Fatal error: ' . $fatal['message'], ['file' => $fatal['file'], 'line' => $fatal['line']]);
+    }
+
+    // Halaman monitor tidak dicatat agar auto-refresh tidak membanjiri log
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
+    if (!str_contains($path, '/admin/monitor-log')) {
+        Logger::request(http_response_code() ?: 200, (microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000);
+    }
+});
+
 $appConfig = require BASE_PATH . '/app/Config/app.php';
 $router = new App\Core\Router($appConfig);
 
@@ -62,6 +100,8 @@ $router->get('/admin/log-aktivitas', 'App\Controllers\Admin\LogAktivitasControll
 $router->get('/admin/log-aktivitas/export', 'App\Controllers\Admin\LogAktivitasController', 'exportCsv');
 
 $router->get('/admin/query-recommend', 'App\Controllers\Admin\QueryRecommendController', 'index');
+
+$router->get('/admin/monitor-log', 'App\Controllers\Admin\MonitorLogController', 'index');
 
 $router->get('/admin/saran', 'App\Controllers\Admin\SaranController', 'index');
 $router->post('/admin/saran/{id}/delete', 'App\Controllers\Admin\SaranController', 'destroy');

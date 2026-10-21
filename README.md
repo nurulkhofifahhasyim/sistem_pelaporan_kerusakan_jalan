@@ -190,12 +190,15 @@ cp .env.example .env          # isi ELASTICSEARCH_PASSWORD (user elastic)
 docker compose up -d --build
 ```
 
-- Aplikasi: http://localhost:8080/sistem_pelaporan_kerusakan_jalan/
-- MySQL: `localhost:3307` (user `laporjalan` / `laporjalan`, root / `root`). Schema + seeder di-import otomatis saat pertama kali jalan.
+- Aplikasi: http://localhost:8181/ (login admin: http://localhost:8181/admin/login)
+- MySQL: `localhost:3316` (user `laporjalan` / `laporjalan`, root / `root`). Schema + seeder di-import otomatis saat pertama kali jalan.
 - Log masuk ke index `app-logs-*` di Elasticsearch host (`https://host.docker.internal:9200`), lihat di Kibana lokal (http://localhost:5601).
 - Kode di-mount langsung, jadi perubahan file langsung terlihat tanpa rebuild.
 - Reset database: `docker compose down -v && docker compose up -d`.
 - Tanpa ELK: `docker compose up -d app db`.
+- Menu **Monitor Logging** (khusus Superadmin, `/admin/monitor-log`) membaca index `app-logs-*` dari Elasticsearch yang sama: grafik linimasa log per level, jumlah request & response time, error teratas, dan detail log (stack trace, request ID).
+- Setiap request dicatat sebagai log `HTTP request` (status & durasi). Exception tak tertangani, fatal error, dan PHP warning juga dicatat; halaman error 500 menampilkan *kode referensi* (request ID) yang bisa dicari di menu Monitor.
+- Tambah user admin: `docker compose exec app php database/seed_admin.php` (lihat `--help`).
 
 ### 5. ELK Stack (Opsional)
 
@@ -313,7 +316,34 @@ Sistem menggunakan 3 status:
 Default status saat pengaduan baru masuk: **Diproses**
 
 ---
+# Running in docker
+docker compose -f docker-compose.yml up -d
+
+## User
+Superadmin
+http://localhost:8181/admin/login 
+
+--username=admin --password=admin123
+
+# Interaktif: ditanya username, nama, jabatan, password (+ konfirmasi)
+docker compose exec app php database/seed_admin.php
+
+# Langsung dengan argumen
+docker compose exec app php database/seed_admin.php --username=budi --password=rahasia123 --nama="Budi Santoso" --jabatan=Superadmin
+
+# Buat beberapa petugas sekaligus (petugas2, petugas3, ... nomor yang sudah dipakai dilewati)
+docker compose exec app php database/seed_admin.php --count=5 --password=admin123
+
+# Ganti password / jabatan user yang sudah ada
+docker compose exec app php database/seed_admin.php --username=petugas1 --password=baru123 --update
+
+# Lihat daftar user admin
+docker compose exec app php database/seed_admin.php --list
+
+
 
 ## Lisensi
 
 Project ini dibuat untuk kepentingan akademis (skripsi).
+
+

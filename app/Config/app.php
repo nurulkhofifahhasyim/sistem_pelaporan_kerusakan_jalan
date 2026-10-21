@@ -1,5 +1,6 @@
 <?php
-$baseUrl = '/sistem_pelaporan_kerusakan_jalan';
+// Docker menjalankan app di root (APP_BASE_URL=""); XAMPP tetap di sub-folder
+$baseUrl = getenv('APP_BASE_URL') !== false ? rtrim(getenv('APP_BASE_URL'), '/') : '/sistem_pelaporan_kerusakan_jalan';
 
 return [
     'name' => 'LaporJalan Kendari',
